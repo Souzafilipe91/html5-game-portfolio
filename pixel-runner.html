@@ -89,10 +89,31 @@
             color: #999;
         }
         .key { background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            color: #667eea;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            border: 2px solid #667eea;
+            transition: all 0.2s ease;
+            margin-bottom: 18px;
+        }
+        .btn-back:hover {
+            background: #667eea;
+            color: white;
+        }
     </style>
 </head>
 <body>
 <div class="container">
+    <a href="index.html" class="btn-back">&#8592; Back to Portfolio</a>
     <div class="header">
         <h1>🏃 Pixel Runner</h1>
         <p style="color:#999;font-size:14px;">Jump over obstacles and collect coins!</p>

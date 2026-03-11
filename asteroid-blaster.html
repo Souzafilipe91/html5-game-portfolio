@@ -129,10 +129,31 @@
             font-weight: bold;
             margin-bottom: 10px;
         }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            color: #e94560;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            border: 2px solid #e94560;
+            transition: all 0.2s ease;
+            margin-bottom: 18px;
+        }
+        .btn-back:hover {
+            background: #e94560;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="index.html" class="btn-back">&#8592; Back to Portfolio</a>
         <div class="header">
             <h1>🚀 Asteroid Blaster</h1>
             <p style="color: #999; font-size: 14px;">Destroy asteroids before they reach you!</p>
