@@ -250,12 +250,15 @@
             }
 
             spawnObstacle() {
-                const height = 30 + Math.random() * 20;
+                const bodyHeight = 30 + Math.random() * 20;
+                const spikeHeight = 10;
                 this.obstacles.push({
                     x: this.canvas.width,
-                    y: this.groundLevel + 30,
+                    // Position the obstacle so its top (including spikes) sits at groundLevel
+                    y: this.groundLevel - bodyHeight,
                     width: 25,
-                    height: height,
+                    height: bodyHeight,
+                    spikeHeight: spikeHeight,
                     color: '#FF6B6B',
                     speed: 5 + this.level * 0.5
                 });
@@ -357,10 +360,12 @@
             }
 
             checkCollision(player, obstacle) {
+                // Hitbox includes the spike height above the obstacle body
+                const hitTop = obstacle.y - (obstacle.spikeHeight || 0);
                 return player.x < obstacle.x + obstacle.width &&
                        player.x + player.width > obstacle.x &&
                        player.y < obstacle.y + obstacle.height &&
-                       player.y + player.height > obstacle.y;
+                       player.y + player.height > hitTop;
             }
 
             createExplosion(x, y) {
@@ -444,14 +449,15 @@
 
                 // Draw obstacles
                 this.obstacles.forEach(obs => {
+                    // Draw body
                     this.ctx.fillStyle = obs.color;
                     this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                    // Draw spikes
+                    // Draw spikes on top of the body (part of the hitbox)
                     this.ctx.fillStyle = '#CC0000';
                     for (let i = 0; i < obs.width; i += 8) {
                         this.ctx.beginPath();
                         this.ctx.moveTo(obs.x + i, obs.y);
-                        this.ctx.lineTo(obs.x + i + 4, obs.y - 8);
+                        this.ctx.lineTo(obs.x + i + 4, obs.y - (obs.spikeHeight || 8));
                         this.ctx.lineTo(obs.x + i + 8, obs.y);
                         this.ctx.fill();
                     }
