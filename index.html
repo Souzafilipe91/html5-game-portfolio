@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Dev Portfolio - HTML5 Games</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            border-bottom: 4px solid #667eea;
+        }
+
+        header h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        header p {
+            font-size: 18px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .tagline {
+            display: inline-block;
+            background: #667eea;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .section-title {
+            font-size: 36px;
+            color: white;
+            margin-bottom: 50px;
+            text-align: center;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-thumbnail {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-thumbnail.puzzle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .game-thumbnail.arcade {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .game-thumbnail.platform {
+            background: linear-gradient(135deg, #87CEEB 0%, #E0F6FF 100%);
+        }
+
+        .game-info {
+            padding: 30px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .game-description {
+            color: #666;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+
+        .game-features {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .game-features h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            color: #666;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .play-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .play-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .play-button.arcade {
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+        }
+
+        .play-button.arcade:hover {
+            box-shadow: 0 10px 25px rgba(233, 69, 96, 0.4);
+        }
+
+        .tech-stack {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 60px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .tech-stack h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .tech-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .tech-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .tech-item strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .tech-item p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .about-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 60px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .about-section h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .about-section p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 4px solid #667eea;
+            margin-top: 60px;
+        }
+
+        footer p {
+            margin-bottom: 10px;
+        }
+
+        .social-links {
+            margin-top: 15px;
+        }
+
+        .social-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: #764ba2;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 32px;
+            }
+
+            .section-title {
+                font-size: 24px;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tech-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎮 Game Dev Portfolio</h1>
+        <p>Three professional HTML5 games built from scratch</p>
+        <span class="tagline">HTML5 • Canvas • Vanilla JavaScript • Web Audio API</span>
+    </header>
+
+    <div class="container">
+        <h2 class="section-title">My Games</h2>
+
+        <div class="games-grid">
+            <!-- Game 1: Match Master -->
+            <div class="game-card">
+                <div class="game-thumbnail puzzle">🎮</div>
+                <div class="game-info">
+                    <h3 class="game-title">Match Master</h3>
+                    <p class="game-description">A classic puzzle game where you match colored tiles to earn points. Addictive mechanics with a progressive combo system.</p>
+                    <div class="game-features">
+                        <h4>Features</h4>
+                        <ul class="feature-list">
+                            <li>Match-3 Mechanics</li>
+                            <li>Combo System</li>
+                            <li>Smooth Animations</li>
+                            <li>Web Audio API</li>
+                            <li>Responsive Design</li>
+                        </ul>
+                    </div>
+                    <a href="match-master.html" class="play-button">Play Now</a>
+                </div>
+            </div>
+
+            <!-- Game 2: Asteroid Blaster -->
+            <div class="game-card">
+                <div class="game-thumbnail arcade">🚀</div>
+                <div class="game-info">
+                    <h3 class="game-title">Asteroid Blaster</h3>
+                    <p class="game-description">Classic arcade action! Destroy asteroids before they reach you. Progressive difficulty with multiple waves.</p>
+                    <div class="game-features">
+                        <h4>Features</h4>
+                        <ul class="feature-list">
+                            <li>Responsive Gameplay</li>
+                            <li>Multiple Waves</li>
+                            <li>Particle System</li>
+                            <li>Sound Effects</li>
+                            <li>Dynamic Progression</li>
+                        </ul>
+                    </div>
+                    <a href="asteroid-blaster.html" class="play-button arcade">Play Now</a>
+                </div>
+            </div>
+
+            <!-- Game 3: Pixel Runner -->
+            <div class="game-card">
+                <div class="game-thumbnail platform">🏃</div>
+                <div class="game-info">
+                    <h3 class="game-title">Pixel Runner</h3>
+                    <p class="game-description">A platformer where you jump over obstacles and collect coins. Precise controls and progressive level design.</p>
+                    <div class="game-features">
+                        <h4>Features</h4>
+                        <ul class="feature-list">
+                            <li>Precise Controls</li>
+                            <li>Coin Collection</li>
+                            <li>Level System</li>
+                            <li>Visual Effects</li>
+                            <li>Realistic Physics</li>
+                        </ul>
+                    </div>
+                    <a href="pixel-runner.html" class="play-button">Play Now</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack Section -->
+        <div class="tech-stack">
+            <h3>🛠️ Tech Stack</h3>
+            <div class="tech-list">
+                <div class="tech-item">
+                    <strong>HTML5 Canvas</strong>
+                    <p>High-performance graphics rendering for all games</p>
+                </div>
+                <div class="tech-item">
+                    <strong>Vanilla JavaScript</strong>
+                    <p>Pure code with no dependencies, modular and scalable structure</p>
+                </div>
+                <div class="tech-item">
+                    <strong>Web Audio API</strong>
+                    <p>Real-time audio synthesis for dynamic sound effects</p>
+                </div>
+                <div class="tech-item">
+                    <strong>Game Loop Pattern</strong>
+                    <p>RequestAnimationFrame for 60 FPS smooth gameplay</p>
+                </div>
+                <div class="tech-item">
+                    <strong>Collision Detection</strong>
+                    <p>Optimized collision detection for responsive gameplay</p>
+                </div>
+                <div class="tech-item">
+                    <strong>Particle Systems</strong>
+                    <p>Dynamic visual effects for improved feedback</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div class="about-section">
+            <h3>📝 About This Portfolio</h3>
+            <p>This portfolio demonstrates proficiency in HTML5 game development. Each game was built from scratch using only HTML5 Canvas and vanilla JavaScript, without heavy external dependencies.</p>
+            <p><strong>Quality Focus:</strong> Each game features well-thought-out mechanics, responsive controls, polished visuals, and professional audio. The code is clean, well-structured, and easily scalable for larger projects.</p>
+            <p><strong>Technologies Demonstrated:</strong> Game loops, collision detection, state management, animations, sound effects, particle systems, and performance optimization.</p>
+            <p><strong>API-Ready:</strong> Games are structured to facilitate integration with external APIs, ideal for platforms requiring real-time backend communication.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Game Dev Portfolio. Built with ❤️ in HTML5</p>
+        <p>All games are responsive and work on modern browsers</p>
+        <div class="social-links">
+            <a href="#github">GitHub</a>
+            <a href="#linkedin">LinkedIn</a>
+            <a href="#portfolio">Portfolio</a>
+        </div>
+    </footer>
+</body>
+</html>

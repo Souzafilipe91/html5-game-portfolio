@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Runner - Platform Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: #f0f0f0;
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-box label {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto 20px;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            border-radius: 10px;
+            border: 3px solid #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .info {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .keys-hint {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .key {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏃 Pixel Runner</h1>
+            <p style="color: #999; font-size: 14px;">Jump over obstacles and collect coins!</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <label>Score</label>
+                <div class="value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <label>Coins</label>
+                <div class="value" id="coins">0</div>
+            </div>
+            <div class="stat-box">
+                <label>Level</label>
+                <div class="value" id="level">1</div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="640" height="400"></canvas>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="game.resetGame()">New Game</button>
+            <button class="btn-secondary" onclick="game.togglePause()">Pause</button>
+        </div>
+
+        <div class="info">
+            <strong>How to Play:</strong><br>
+            Press <strong>SPACE</strong> or <strong>UP ARROW</strong> to jump. Collect coins to earn points and avoid obstacles!
+            <div class="keys-hint">
+                <span><span class="key">SPACE</span> or <span class="key">↑</span> to jump</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PixelRunnerGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                this.player = {
+                    x: 50,
+                    y: 0,
+                    width: 30,
+                    height: 30,
+                    velocityY: 0,
+                    jumping: false,
+                    color: '#FF6B6B'
+                };
+
+                this.gravity = 0.6;
+                this.jumpPower = -12;
+                this.groundLevel = this.canvas.height - 60;
+
+                this.obstacles = [];
+                this.coins = [];
+                this.particles = [];
+                this.score = 0;
+                this.coinsCollected = 0;
+                this.level = 1;
+                this.isPaused = false;
+                this.gameOver = false;
+                this.spawnTimer = 0;
+                this.spawnRate = 120;
+
+                document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                this.resetGame();
+                this.gameLoop();
+            }
+
+            resetGame() {
+                this.player.y = this.groundLevel;
+                this.player.velocityY = 0;
+                this.player.jumping = false;
+                this.obstacles = [];
+                this.coins = [];
+                this.particles = [];
+                this.score = 0;
+                this.coinsCollected = 0;
+                this.level = 1;
+                this.isPaused = false;
+                this.gameOver = false;
+                this.spawnTimer = 0;
+                this.spawnRate = 120;
+                this.playSound(400, 0.1, 0.1);
+            }
+
+            togglePause() {
+                this.isPaused = !this.isPaused;
+            }
+
+            handleKeyDown(e) {
+                if ((e.code === 'Space' || e.code === 'ArrowUp') && !this.isPaused && !this.gameOver) {
+                    if (!this.player.jumping) {
+                        this.player.velocityY = this.jumpPower;
+                        this.player.jumping = true;
+                        this.playSound(600, 0.1, 0.2);
+                    }
+                    e.preventDefault();
+                }
+            }
+
+            spawnObstacle() {
+                const height = 30 + Math.random() * 20;
+                this.obstacles.push({
+                    x: this.canvas.width,
+                    y: this.groundLevel + 30,
+                    width: 25,
+                    height: height,
+                    color: '#FF6B6B',
+                    speed: 5 + this.level * 0.5
+                });
+            }
+
+            spawnCoin() {
+                this.coins.push({
+                    x: this.canvas.width - Math.random() * 200,
+                    y: this.groundLevel - 100 - Math.random() * 100,
+                    radius: 8,
+                    collected: false,
+                    rotation: 0
+                });
+            }
+
+            update() {
+                if (this.isPaused || this.gameOver) return;
+
+                // Update player
+                this.player.velocityY += this.gravity;
+                this.player.y += this.player.velocityY;
+
+                // Ground collision
+                if (this.player.y >= this.groundLevel) {
+                    this.player.y = this.groundLevel;
+                    this.player.jumping = false;
+                    this.player.velocityY = 0;
+                }
+
+                // Spawn obstacles
+                this.spawnTimer++;
+                if (this.spawnTimer > this.spawnRate) {
+                    this.spawnObstacle();
+                    this.spawnTimer = 0;
+                    this.spawnRate = Math.max(60, 120 - this.level * 5);
+                }
+
+                // Spawn coins occasionally
+                if (Math.random() < 0.01) {
+                    this.spawnCoin();
+                }
+
+                // Update obstacles
+                this.obstacles = this.obstacles.filter(obs => {
+                    obs.x -= obs.speed;
+                    return obs.x > -obs.width;
+                });
+
+                // Update coins
+                this.coins = this.coins.filter(coin => {
+                    coin.rotation += 0.05;
+                    coin.x -= 5 + this.level * 0.3;
+                    return coin.x > -coin.radius;
+                });
+
+                // Update particles
+                this.particles = this.particles.filter(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.2;
+                    p.life--;
+                    return p.life > 0;
+                });
+
+                // Collision with obstacles
+                this.obstacles.forEach(obs => {
+                    if (this.checkCollision(this.player, obs)) {
+                        this.gameOver = true;
+                        this.createExplosion(this.player.x, this.player.y);
+                        this.playSound(200, 0.3, 0.3);
+                    }
+                });
+
+                // Coin collection
+                this.coins.forEach(coin => {
+                    if (!coin.collected) {
+                        const dx = this.player.x - coin.x;
+                        const dy = this.player.y - coin.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < this.player.width / 2 + coin.radius) {
+                            coin.collected = true;
+                            this.coinsCollected++;
+                            this.score += 10;
+                            this.createSparkles(coin.x, coin.y);
+                            this.playSound(800, 0.1, 0.2);
+
+                            // Level up
+                            if (this.coinsCollected % 5 === 0) {
+                                this.level++;
+                                this.playSound(1000, 0.15, 0.3);
+                            }
+                        }
+                    }
+                });
+
+                // Score from distance
+                this.score++;
+            }
+
+            checkCollision(player, obstacle) {
+                return player.x < obstacle.x + obstacle.width &&
+                       player.x + player.width > obstacle.x &&
+                       player.y < obstacle.y + obstacle.height &&
+                       player.y + player.height > obstacle.y;
+            }
+
+            createExplosion(x, y) {
+                for (let i = 0; i < 15; i++) {
+                    const angle = (Math.PI * 2 * i) / 15;
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * 4,
+                        vy: Math.sin(angle) * 4,
+                        life: 30,
+                        color: '#FF6B6B'
+                    });
+                }
+            }
+
+            createSparkles(x, y) {
+                for (let i = 0; i < 8; i++) {
+                    const angle = (Math.PI * 2 * i) / 8;
+                    this.particles.push({
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * 3,
+                        vy: Math.sin(angle) * 3,
+                        life: 20,
+                        color: '#FFD700'
+                    });
+                }
+            }
+
+            playSound(frequency, duration, volume) {
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+
+                    oscillator.frequency.value = frequency;
+                    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                } catch (e) {
+                    // Audio not available
+                }
+            }
+
+            draw() {
+                // Clear canvas
+                this.ctx.fillStyle = '#87CEEB';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw clouds
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                for (let i = 0; i < 3; i++) {
+                    const x = (this.score / 10 + i * 200) % (this.canvas.width + 100);
+                    this.drawCloud(x, 50);
+                }
+
+                // Draw ground
+                this.ctx.fillStyle = '#90EE90';
+                this.ctx.fillRect(0, this.groundLevel + 30, this.canvas.width, this.canvas.height - this.groundLevel - 30);
+
+                // Draw grass line
+                this.ctx.fillStyle = '#7CB342';
+                this.ctx.fillRect(0, this.groundLevel + 30, this.canvas.width, 5);
+
+                // Draw player
+                this.ctx.fillStyle = this.player.color;
+                this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+
+                // Draw player eyes
+                this.ctx.fillStyle = 'white';
+                this.ctx.fillRect(this.player.x + 5, this.player.y + 8, 6, 6);
+                this.ctx.fillRect(this.player.x + 19, this.player.y + 8, 6, 6);
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillRect(this.player.x + 6, this.player.y + 9, 4, 4);
+                this.ctx.fillRect(this.player.x + 20, this.player.y + 9, 4, 4);
+
+                // Draw obstacles
+                this.obstacles.forEach(obs => {
+                    this.ctx.fillStyle = obs.color;
+                    this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                    // Draw spikes
+                    this.ctx.fillStyle = '#CC0000';
+                    for (let i = 0; i < obs.width; i += 8) {
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(obs.x + i, obs.y);
+                        this.ctx.lineTo(obs.x + i + 4, obs.y - 8);
+                        this.ctx.lineTo(obs.x + i + 8, obs.y);
+                        this.ctx.fill();
+                    }
+                });
+
+                // Draw coins
+                this.coins.forEach(coin => {
+                    if (!coin.collected) {
+                        this.ctx.save();
+                        this.ctx.translate(coin.x, coin.y);
+                        this.ctx.rotate(coin.rotation);
+                        this.ctx.fillStyle = '#FFD700';
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, 0, coin.radius, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = '#FFA500';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.stroke();
+                        this.ctx.restore();
+                    }
+                });
+
+                // Draw particles
+                this.particles.forEach(p => {
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.globalAlpha = p.life / 30;
+                    this.ctx.fillRect(p.x, p.y, 4, 4);
+                    this.ctx.globalAlpha = 1;
+                });
+
+                // Draw UI
+                this.ctx.fillStyle = '#333';
+                this.ctx.font = 'bold 16px Arial';
+                this.ctx.fillText(`Level: ${this.level}`, 10, 25);
+
+                if (this.gameOver) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = 'bold 32px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 20);
+                    this.ctx.font = '18px Arial';
+                    this.ctx.fillText(`Final Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
+                }
+            }
+
+            drawCloud(x, y) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 20, 0, Math.PI * 2);
+                this.ctx.arc(x + 20, y, 25, 0, Math.PI * 2);
+                this.ctx.arc(x + 40, y, 20, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+
+            updateUI() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('coins').textContent = this.coinsCollected;
+                document.getElementById('level').textContent = this.level;
+            }
+
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.updateUI();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        const game = new PixelRunnerGame();
+    </script>
+</body>
+</html>

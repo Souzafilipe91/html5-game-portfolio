@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Master - Puzzle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: #f0f0f0;
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-box label {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            cursor: pointer;
+            border: 3px solid #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .info {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .combo-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            pointer-events: none;
+            opacity: 0;
+            animation: comboFloat 0.8s ease-out forwards;
+        }
+
+        @keyframes comboFloat {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -150%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Match Master</h1>
+            <p style="color: #999; font-size: 14px;">Match 3 or more tiles of the same color</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <label>Score</label>
+                <div class="value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <label>Combo</label>
+                <div class="value" id="combo">0x</div>
+            </div>
+            <div class="stat-box">
+                <label>Moves</label>
+                <div class="value" id="moves">20</div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="game.resetGame()">New Game</button>
+            <button class="btn-secondary" onclick="game.togglePause()">Pause</button>
+        </div>
+
+        <div class="info">
+            <strong>How to Play:</strong><br>
+            Click on two adjacent tiles to swap them. Form lines of 3 or more tiles of the same color to eliminate them and earn points!
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 5;
+        const TILE_SIZE = 80;
+        const TILE_PADDING = 5;
+        const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+
+        class MatchMasterGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.grid = [];
+                this.selectedTile = null;
+                this.score = 0;
+                this.combo = 0;
+                this.moves = 20;
+                this.isPaused = false;
+                this.isAnimating = false;
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                this.canvas.addEventListener('click', (e) => this.handleClick(e));
+                this.resetGame();
+                this.gameLoop();
+            }
+
+            resetGame() {
+                this.grid = [];
+                this.selectedTile = null;
+                this.score = 0;
+                this.combo = 0;
+                this.moves = 20;
+                this.isPaused = false;
+
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    this.grid[y] = [];
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        this.grid[y][x] = {
+                            color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                            x: x,
+                            y: y,
+                            scale: 1,
+                            matched: false
+                        };
+                    }
+                }
+
+                this.updateUI();
+                this.playSound(400, 0.1, 0.1);
+            }
+
+            togglePause() {
+                this.isPaused = !this.isPaused;
+            }
+
+            handleClick(e) {
+                if (this.isPaused || this.isAnimating || this.moves <= 0) return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const gridX = Math.floor(x / (TILE_SIZE + TILE_PADDING));
+                const gridY = Math.floor(y / (TILE_SIZE + TILE_PADDING));
+
+                if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) return;
+
+                if (this.selectedTile) {
+                    const dx = Math.abs(this.selectedTile.x - gridX);
+                    const dy = Math.abs(this.selectedTile.y - gridY);
+
+                    if (dx + dy === 1) {
+                        this.swapTiles(this.selectedTile, this.grid[gridY][gridX]);
+                        this.moves--;
+                        this.selectedTile = null;
+                    } else if (this.selectedTile.x === gridX && this.selectedTile.y === gridY) {
+                        this.selectedTile = null;
+                    } else {
+                        this.selectedTile = this.grid[gridY][gridX];
+                    }
+                } else {
+                    this.selectedTile = this.grid[gridY][gridX];
+                }
+
+                this.playSound(600, 0.05, 0.1);
+            }
+
+            swapTiles(tile1, tile2) {
+                [tile1.color, tile2.color] = [tile2.color, tile1.color];
+                this.isAnimating = true;
+
+                setTimeout(() => {
+                    const matches = this.findMatches();
+                    if (matches.length > 0) {
+                        this.removeMatches(matches);
+                        this.combo++;
+                    } else {
+                        this.combo = 0;
+                    }
+                    this.isAnimating = false;
+                }, 200);
+            }
+
+            findMatches() {
+                const matched = new Set();
+
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const tile = this.grid[y][x];
+
+                        // Check horizontal
+                        if (x <= GRID_SIZE - 3) {
+                            if (tile.color === this.grid[y][x + 1].color &&
+                                tile.color === this.grid[y][x + 2].color) {
+                                matched.add(`${x},${y}`);
+                                matched.add(`${x + 1},${y}`);
+                                matched.add(`${x + 2},${y}`);
+                            }
+                        }
+
+                        // Check vertical
+                        if (y <= GRID_SIZE - 3) {
+                            if (tile.color === this.grid[y + 1][x].color &&
+                                tile.color === this.grid[y + 2][x].color) {
+                                matched.add(`${x},${y}`);
+                                matched.add(`${x},${y + 1}`);
+                                matched.add(`${x},${y + 2}`);
+                            }
+                        }
+                    }
+                }
+
+                return Array.from(matched).map(pos => {
+                    const [x, y] = pos.split(',').map(Number);
+                    return this.grid[y][x];
+                });
+            }
+
+            removeMatches(matches) {
+                matches.forEach(tile => tile.matched = true);
+
+                const points = matches.length * 10 * this.combo;
+                this.score += points;
+
+                this.playSound(800, 0.1, 0.2);
+                this.showComboIndicator(points);
+
+                setTimeout(() => {
+                    matches.forEach(tile => {
+                        tile.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                        tile.matched = false;
+                    });
+                }, 300);
+            }
+
+            showComboIndicator(points) {
+                const indicator = document.createElement('div');
+                indicator.className = 'combo-indicator';
+                indicator.textContent = `+${points}`;
+                document.body.appendChild(indicator);
+                setTimeout(() => indicator.remove(), 800);
+            }
+
+            playSound(frequency, duration, volume) {
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+
+                    oscillator.frequency.value = frequency;
+                    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                } catch (e) {
+                    // Audio not available
+                }
+            }
+
+            updateUI() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('combo').textContent = this.combo > 0 ? `${this.combo}x` : '0x';
+                document.getElementById('moves').textContent = this.moves;
+            }
+
+            draw() {
+                this.ctx.fillStyle = '#f5f7fa';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const tile = this.grid[y][x];
+                        const posX = x * (TILE_SIZE + TILE_PADDING) + TILE_PADDING;
+                        const posY = y * (TILE_SIZE + TILE_PADDING) + TILE_PADDING;
+
+                        // Draw tile
+                        this.ctx.fillStyle = tile.color;
+                        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                        this.ctx.shadowBlur = 10;
+                        this.ctx.shadowOffsetX = 0;
+                        this.ctx.shadowOffsetY = 4;
+
+                        const scale = tile.matched ? 0.8 : tile.scale;
+                        const scaledSize = TILE_SIZE * scale;
+                        const offsetX = (TILE_SIZE - scaledSize) / 2;
+                        const offsetY = (TILE_SIZE - scaledSize) / 2;
+
+                        this.ctx.fillRect(posX + offsetX, posY + offsetY, scaledSize, scaledSize);
+
+                        // Draw border if selected
+                        if (this.selectedTile === tile) {
+                            this.ctx.strokeStyle = '#333';
+                            this.ctx.lineWidth = 3;
+                            this.ctx.strokeRect(posX + offsetX, posY + offsetY, scaledSize, scaledSize);
+                        }
+
+                        this.ctx.shadowColor = 'transparent';
+                    }
+                }
+
+                if (this.moves <= 0) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = 'bold 32px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 20);
+                    this.ctx.font = '18px Arial';
+                    this.ctx.fillText(`Final Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
+                }
+            }
+
+            gameLoop() {
+                this.draw();
+                this.updateUI();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        const game = new MatchMasterGame();
+    </script>
+</body>
+</html>
